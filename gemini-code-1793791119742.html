@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thử Thách Toán Học 12 - Tích Vô Hướng</title>
+    
+    <!-- Tích hợp MathJax để hiển thị công thức Toán học -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    
+    <!-- Tích hợp html2canvas để chụp ảnh màn hình kết quả -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #3730A3;
+            --success: #10B981;
+            --danger: #EF4444;
+            --bg-color: #EEF2FF;
+            --card-bg: #FFFFFF;
+            --text-main: #1E293B;
+            --text-gray: #64748B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(#C7D2FE 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 15px;
+            color: var(--text-main);
+        }
+
+        .app-container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 480px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(79, 70, 229, 0.15);
+            overflow: hidden;
+            position: relative;
+            padding: 30px 25px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .title {
+            text-align: center; color: var(--primary); font-size: 1.4rem; font-weight: 800; margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            text-align: center; color: var(--text-gray); font-weight: 600; margin-bottom: 25px; font-size: 0.95rem;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 8px; font-weight: 700; font-size: 0.9rem; color: var(--text-main);}
+        .input-group input {
+            width: 100%; padding: 14px; border: 2px solid #E2E8F0; 
+            border-radius: 12px; font-size: 1rem; transition: 0.3s;
+            outline: none; background: #F8FAFC;
+        }
+        .input-group input:focus { border-color: var(--primary); background: #fff;}
+
+        .btn {
+            width: 100%; padding: 15px; border: none; border-radius: 12px;
+            font-size: 1.05rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+            margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2); }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important;}
+
+        .instructions {
+            background: #EEF2FF; border-left: 4px solid var(--primary);
+            padding: 15px; border-radius: 10px; margin-bottom: 25px; font-size: 0.9rem; line-height: 1.6;
+        }
+
+        /* --- MÀN HÌNH 2: TRẮC NGHIỆM --- */
+        .header-quiz { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 15px; color: var(--primary); }
+        .progress-bar { background: #E2E8F0; border-radius: 10px; height: 8px; margin-bottom: 25px; overflow: hidden; }
+        .progress-fill { background: var(--primary); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 10px;}
+        
+        .question-box { font-size: 1.15rem; font-weight: 600; line-height: 1.6; margin-bottom: 25px; min-height: 120px; color: #0F172A;}
+        
+        .tf-buttons { display: flex; gap: 15px; margin-bottom: 20px; }
+        .tf-buttons .btn { margin-top: 0; }
+
+        .feedback {
+            display: none; padding: 15px; border-radius: 12px; margin-bottom: 20px; animation: fadeIn 0.3s;
+        }
+        .feedback.correct { background: #D1FAE5; border: 2px solid #34D399; }
+        .feedback.incorrect { background: #FEE2E2; border: 2px solid #F87171; }
+        .feedback-title { font-weight: 800; margin-bottom: 8px; font-size: 1.1rem;}
+        .feedback-desc { font-size: 0.95rem; line-height: 1.5; color: #334155;}
+
+        /* --- MÀN HÌNH 3: TỔNG KẾT --- */
+        .result-circle {
+            width: 130px; height: 130px; border-radius: 50%; border: 8px solid var(--primary);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem; font-weight: 800; margin: 0 auto 25px; color: var(--primary);
+        }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .stat-card { background: #F8FAFC; padding: 15px; border-radius: 12px; text-align: center; font-weight: 600; border: 1px solid #E2E8F0;}
+        .stat-card span { display: block; font-size: 1.6rem; font-weight: 800; margin-top: 5px;}
+        .stat-correct { color: var(--success); }
+        .stat-wrong { color: var(--danger); }
+        
+        .summary-string {
+            background: #FEF3C7; color: #92400E; padding: 15px; border-radius: 12px;
+            font-weight: 700; text-align: center; margin-bottom: 25px; font-size: 0.9rem;
+            border: 2px dashed #F59E0B; word-wrap: break-word; line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container" id="capture-area">
+    <!-- MÀN HÌNH 1: GIỚI THIỆU -->
+    <div id="screen-1" class="screen active">
+        <div class="title">THỬ THÁCH TOÁN 12</div>
+        <div class="subtitle">Chủ đề: Tích vô hướng của vectơ trong không gian</div>
+        
+        <div class="instructions">
+            <strong>🎯 Hướng dẫn tham gia:</strong><br>
+            - Bài kiểm tra gồm <strong>10 nhận định</strong> Toán học.<br>
+            - Nhiệm vụ của em là đọc kỹ và chọn <strong>ĐÚNG</strong> hoặc <strong>SAI</strong>.<br>
+            - Ứng dụng sẽ giải thích chi tiết bản chất Toán học sau mỗi câu.
+        </div>
+
+        <div class="input-group">
+            <label>Họ và tên của em:</label>
+            <input type="text" id="student-name" placeholder="VD: Nguyễn Kim Nghĩa" required autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>Lớp học:</label>
+            <input type="text" id="student-class" placeholder="VD: 12A1" required autocomplete="off">
+        </div>
+
+        <button class="btn btn-primary" onclick="startQuiz()">BẮT ĐẦU THỬ THÁCH 🚀</button>
+    </div>
+
+    <!-- MÀN HÌNH 2: TRẮC NGHIỆM -->
+    <div id="screen-2" class="screen">
+        <div class="header-quiz">
+            <span id="question-counter">Câu 1/10</span>
+            <span id="score-tracker">Điểm: 0</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-bar"></div>
+        </div>
+
+        <div class="question-box" id="question-text">Đang tải câu hỏi...</div>
+
+        <div class="tf-buttons">
+            <button class="btn btn-success" id="btn-true" onclick="checkAnswer(true)">ĐÚNG</button>
+            <button class="btn btn-danger" id="btn-false" onclick="checkAnswer(false)">SAI</button>
+        </div>
+
+        <div class="feedback" id="feedback-box">
+            <div class="feedback-title" id="feedback-title">CHÍNH XÁC!</div>
+            <div class="feedback-desc" id="feedback-desc">Lời giải thích ở đây.</div>
+        </div>
+
+        <button class="btn btn-primary" id="btn-next" style="display: none;" onclick="nextQuestion()">TIẾP TỤC ➔</button>
+    </div>
+
+    <!-- MÀN HÌNH 3: TỔNG KẾT -->
+    <div id="screen-3" class="screen">
+        <div class="title" id="rank-title" style="font-size: 1.8rem; margin-bottom: 20px;">XUẤT SẮC!</div>
+        
+        <div class="result-circle" id="final-score">10/10</div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">Tỉ lệ đúng<span class="stat-correct" id="final-percent">100%</span></div>
+            <div class="stat-card">Câu sai<span class="stat-wrong" id="final-wrong">0</span></div>
+        </div>
+
+        <div class="summary-string" id="summary-string">
+            LỚP: ... | HỌ TÊN: ... | CHỦ ĐỀ: ... | KẾT QUẢ: .../10 | XẾP LOẠI: ...
+        </div>
+
+        <button class="btn btn-primary" id="btn-capture" onclick="captureResult()">📸 CHỤP ẢNH KẾT QUẢ</button>
+        <button class="btn btn-outline" id="btn-retry" onclick="location.reload()">🔄 LÀM LẠI BÀI</button>
+    </div>
+</div>
+
+<script>
+    // MA TRẬN 10 CÂU HỎI (Toán 12 - Tích vô hướng của vectơ trong không gian)
+    const questions = [
+        // Câu 1-3: Nhận biết
+        {
+            text: "Trong không gian, tích vô hướng của hai vectơ $\\vec{a}$ và $\\vec{b}$ đều khác $\\vec{0}$ là một số thực, được tính bằng công thức $\\vec{a} \\cdot \\vec{b} = |\\vec{a}| \\cdot |\\vec{b}| \\cdot \\cos(\\vec{a}, \\vec{b})$.",
+            isTrue: true,
+            explanation: "Chính xác. Khác với một số phép toán khác sinh ra vectơ mới, tích vô hướng của hai vectơ luôn cho kết quả là một đại lượng vô hướng (một số thực)."
+        },
+        {
+            text: "Góc giữa hai vectơ $\\vec{a}$ và $\\vec{b}$ khác $\\vec{0}$ trong không gian luôn là một góc nhọn hoặc góc vuông (tức là có số đo từ $0^\\circ$ đến $90^\\circ$).",
+            isTrue: false,
+            explanation: "Chưa chính xác. Theo quy ước, góc giữa hai vectơ có thể nhận giá trị tuỳ ý từ $0^\\circ$ đến $180^\\circ$. Nếu tích vô hướng âm, góc giữa chúng sẽ là góc tù."
+        },
+        {
+            text: "Với mọi vectơ $\\vec{a}$ trong không gian, bình phương vô hướng của vectơ $\\vec{a}$ luôn bằng bình phương độ dài của nó, tức là $\\vec{a}^2 = |\\vec{a}|^2$.",
+            isTrue: true,
+            explanation: "Chính xác. Áp dụng định nghĩa ta có $\\vec{a}^2 = \\vec{a} \\cdot \\vec{a} = |\\vec{a}| \\cdot |\\vec{a}| \\cdot \\cos 0^\\circ = |\\vec{a}|^2$."
+        },
+        // Câu 4-6: Thông hiểu
+        {
+            text: "Hai vectơ $\\vec{a}$ và $\\vec{b}$ khác $\\vec{0}$ vuông góc với nhau khi và chỉ khi tích vô hướng của chúng bằng $0$.",
+            isTrue: true,
+            explanation: "Chính xác. Khi $\\vec{a} \\bot \\vec{b}$, góc giữa chúng bằng $90^\\circ$. Do $\\cos 90^\\circ = 0$ nên tích vô hướng $\\vec{a} \\cdot \\vec{b} = 0$."
+        },
+        {
+            text: "Tích vô hướng của hai vectơ trong không gian là một vectơ mới có hướng vuông góc với cả hai mặt phẳng chứa hai vectơ ban đầu.",
+            isTrue: false,
+            explanation: "Chưa chính xác. Lỗi sai ở khái niệm bản chất: Tích vô hướng luôn sinh ra một SỐ THỰC, không bao giờ sinh ra một vectơ."
+        },
+        {
+            text: "Tính chất phân phối của tích vô hướng đối với phép cộng vectơ vẫn luôn đúng trong không gian: $\\vec{a} \\cdot (\\vec{b} + \\vec{c}) = \\vec{a} \\cdot \\vec{b} + \\vec{a} \\cdot \\vec{c}$.",
+            isTrue: true,
+            explanation: "Chính xác. Các tính chất giao hoán, phân phối, và nhân với số thực của tích vô hướng trong mặt phẳng đều được bảo toàn trong không gian."
+        },
+        // Câu 7-8: Phân tích ví dụ
+        {
+            text: "Cho hình lập phương $ABCD.A'B'C'D'$ có cạnh bằng $a$. Tích vô hướng $\\vec{AB} \\cdot \\vec{A'C'} = 0$.",
+            isTrue: false,
+            explanation: "Chưa chính xác. Ta có $\\vec{A'C'} = \\vec{AC}$. Suy ra $\\vec{AB} \\cdot \\vec{A'C'} = \\vec{AB} \\cdot \\vec{AC} = |\\vec{AB}| \\cdot |\\vec{AC}| \\cdot \\cos 45^\\circ = a \\cdot a\\sqrt{2} \\cdot \\frac{\\sqrt{2}}{2} = a^2 \\neq 0$."
+        },
+        {
+            text: "Cho tứ diện đều $ABCD$ cạnh $a$. Tích vô hướng $\\vec{AB} \\cdot \\vec{AC} = \\frac{a^2}{2}$.",
+            isTrue: true,
+            explanation: "Chính xác. Vì $ABCD$ là tứ diện đều nên $\\triangle ABC$ là tam giác đều cạnh $a$. Góc $\\widehat{BAC} = 60^\\circ$. Vậy $\\vec{AB} \\cdot \\vec{AC} = a \\cdot a \\cdot \\cos 60^\\circ = \\frac{a^2}{2}$."
+        },
+        // Câu 9-10: Vận dụng
+        {
+            text: "Nếu $|\\vec{a} + \\vec{b}|^2 = |\\vec{a}|^2 + |\\vec{b}|^2$ thì hai vectơ $\\vec{a}$ và $\\vec{b}$ phải là hai vectơ đối nhau.",
+            isTrue: false,
+            explanation: "Chưa chính xác. Khai triển vế trái ta có $|\\vec{a}|^2 + |\\vec{b}|^2 + 2\\vec{a}\\cdot\\vec{b}$. Để đẳng thức đúng thì $2\\vec{a}\\cdot\\vec{b} = 0$, nghĩa là hai vectơ này vuông góc với nhau, không phải đối nhau."
+        },
+        {
+            text: "Cho hình chóp $S.ABCD$ có đáy là hình vuông, $SA \\bot (ABCD)$. Ta luôn có hệ thức $\\vec{SA} \\cdot \\vec{BC} = 0$.",
+            isTrue: true,
+            explanation: "Chính xác. Vì đường thẳng $SA$ vuông góc với toàn bộ mặt phẳng $(ABCD)$ nên $SA \\bot BC$. Góc giữa chúng bằng $90^\\circ$, dẫn đến tích vô hướng bằng $0$."
+        }
+    ];
+
+    let currentQ = 0;
+    let score = 0;
+    let sName = "";
+    let sClass = "";
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function startQuiz() {
+        sName = document.getElementById('student-name').value.trim();
+        sClass = document.getElementById('student-class').value.trim();
+
+        if(!sName || !sClass) {
+            alert("Em vui lòng nhập đầy đủ Họ tên và Lớp nhé!");
+            return;
+        }
+        
+        switchScreen('screen-2');
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        let q = questions[currentQ];
+        
+        document.getElementById('feedback-box').style.display = 'none';
+        document.getElementById('btn-next').style.display = 'none';
+        document.getElementById('btn-true').disabled = false;
+        document.getElementById('btn-false').disabled = false;
+
+        document.getElementById('question-counter').innerText = `Câu ${currentQ + 1}/10`;
+        document.getElementById('progress-bar').style.width = `${(currentQ / questions.length) * 100}%`;
+        
+        let qElement = document.getElementById('question-text');
+        qElement.innerHTML = q.text;
+        
+        if (window.MathJax) {
+            MathJax.typesetPromise([qElement]);
+        }
+    }
+
+    function checkAnswer(userChoice) {
+        document.getElementById('btn-true').disabled = true;
+        document.getElementById('btn-false').disabled = true;
+
+        let q = questions[currentQ];
+        let isCorrect = (userChoice === q.isTrue);
+        
+        if(isCorrect) score++;
+        document.getElementById('score-tracker').innerText = `Điểm: ${score}`;
+
+        let fbBox = document.getElementById('feedback-box');
+        let fbTitle = document.getElementById('feedback-title');
+        let fbDesc = document.getElementById('feedback-desc');
+
+        fbBox.style.display = 'block';
+        fbBox.className = 'feedback ' + (isCorrect ? 'correct' : 'incorrect');
+        
+        fbTitle.innerHTML = isCorrect ? "🎉 CHÍNH XÁC! Em đã hiểu kiến thức." : "💡 CHƯA CHÍNH XÁC! Hãy đọc lời giải thích.";
+        fbDesc.innerHTML = q.explanation;
+
+        if (window.MathJax) {
+            MathJax.typesetPromise([fbDesc]);
+        }
+
+        document.getElementById('btn-next').style.display = 'flex';
+    }
+
+    function nextQuestion() {
+        currentQ++;
+        if(currentQ < questions.length) {
+            loadQuestion();
+        } else {
+            showSummary();
+        }
+    }
+
+    function showSummary() {
+        switchScreen('screen-3');
+        document.getElementById('progress-bar').style.width = `100%`;
+        
+        let percent = Math.round((score / questions.length) * 100);
+        let wrong = questions.length - score;
+        
+        let rank = "";
+        let color = "";
+
+        if (score >= 9) { rank = "XUẤT SẮC"; color = "var(--success)"; }
+        else if (score >= 7) { rank = "RẤT TỐT"; color = "var(--primary)"; }
+        else if (score >= 5) { rank = "CẦN CỐ GẮNG"; color = "#F59E0B"; } 
+        else { rank = "CẦN ÔN TẬP THÊM"; color = "var(--danger)"; }
+
+        document.getElementById('rank-title').innerText = rank;
+        document.getElementById('rank-title').style.color = color;
+        
+        let scoreCircle = document.getElementById('final-score');
+        scoreCircle.innerText = `${score}/10`;
+        scoreCircle.style.borderColor = color;
+        scoreCircle.style.color = color;
+        
+        document.getElementById('final-percent').innerText = `${percent}%`;
+        document.getElementById('final-wrong').innerText = wrong;
+
+        let summaryStr = `LỚP: ${sClass.toUpperCase()} | HỌ TÊN: ${sName.toUpperCase()} | CHỦ ĐỀ: TÍCH VÔ HƯỚNG VECTƠ | KẾT QUẢ: ${score}/10 | XẾP LOẠI: ${rank}`;
+        document.getElementById('summary-string').innerText = summaryStr;
+    }
+
+    function captureResult() {
+        let captureArea = document.getElementById('capture-area');
+        
+        document.getElementById('btn-capture').style.display = 'none';
+        document.getElementById('btn-retry').style.display = 'none';
+
+        html2canvas(captureArea, { backgroundColor: "#EEF2FF", scale: 2, borderRadius: 20 }).then(canvas => {
+            let link = document.createElement('a');
+            link.download = `Toan12_TichVoHuong_${sName.replace(/\s+/g, '')}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+            
+            document.getElementById('btn-capture').style.display = 'flex';
+            document.getElementById('btn-retry').style.display = 'flex';
+        });
+    }
+</script>
+
+</body>
+</html>
